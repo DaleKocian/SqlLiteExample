@@ -10,20 +10,20 @@ import com.example.sqlliteexample.app.model.Location;
 /**
  * Created by dkocian on 5/29/14.
  */
-public class MySQLiteHelper extends SQLiteOpenHelper {
+public class LocationDbHelper extends SQLiteOpenHelper {
     public static final String DEVICE_ALERT_ENABLED_ZIP = "DAEZ99";
     public static final String DB_NAME = "w_alert";
     public static final String DB_TABLE = "w_alert_loc";
     public static final int DB_VERSION = 1;
 
-    private static final String CLASS_NAME = MySQLiteHelper.class.getSimpleName();
+    private static final String CLASS_NAME = LocationDbHelper.class.getSimpleName();
     public static final String DB_CREATE = "CREATE TABLE "
-            + MySQLiteHelper.DB_TABLE
+            + LocationDbHelper.DB_TABLE
             + " (" + Location.ID_COL + " INTEGER PRIMARY KEY, " + Location.ZIP_COL + " TEXT UNIQUE NOT NULL, "
             + Location.CITY_COL + " TEXT, " + Location.REGION_COL + " TEXT, " + Location.LAST_ALERT_COL + " INTEGER, "
             + Location.ALERT_ENABLED_COL + " INTEGER)";
 
-    public MySQLiteHelper(Context context) {
+    public LocationDbHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
     }
 
@@ -43,7 +43,7 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
                 "Upgrading database from version " + oldVersion + " to "
                         + newVersion + ", which will destroy all old data"
         );
-        db.execSQL("DROP TABLE IF EXISTS " + MySQLiteHelper.DB_TABLE);
+        db.execSQL("DROP TABLE IF EXISTS " + LocationDbHelper.DB_TABLE);
         onCreate(db);
     }
 }

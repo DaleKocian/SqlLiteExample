@@ -15,10 +15,10 @@ import java.util.List;
  */
 public class LocationDataSource {
     private SQLiteDatabase db;
-    private MySQLiteHelper dbHelper;
+    private LocationDbHelper dbHelper;
 
     public LocationDataSource(Context context) {
-        dbHelper = new MySQLiteHelper(context);
+        dbHelper = new LocationDbHelper(context);
     }
 
     public void open() {
@@ -36,26 +36,26 @@ public class LocationDataSource {
 
     public void createLocation(Location location) {
         ContentValues values = getLocationContentValues(location);
-        long id = this.db.insertOrThrow(MySQLiteHelper.DB_TABLE, null, values);
+        long id = this.db.insertOrThrow(LocationDbHelper.DB_TABLE, null, values);
         location.setId(id);
     }
 
     public void update(Location location) {
         ContentValues values = getLocationContentValues(location);
-        this.db.update(MySQLiteHelper.DB_TABLE, values, Location.ID_COL + "=" + location.getId(), null);
+        this.db.update(LocationDbHelper.DB_TABLE, values, Location.ID_COL + "=" + location.getId(), null);
     }
 
     public int delete(long id) {
-        return this.db.delete(MySQLiteHelper.DB_TABLE, Location.ID_COL + "=" + id, null);
+        return this.db.delete(LocationDbHelper.DB_TABLE, Location.ID_COL + "=" + id, null);
     }
 
     public int delete(String zip) {
-        return this.db.delete(MySQLiteHelper.DB_TABLE, Location.ZIP_COL + "=" + zip, null);
+        return this.db.delete(LocationDbHelper.DB_TABLE, Location.ZIP_COL + "=" + zip, null);
     }
 
     public Location get(String zip) {
         Location location = null;
-        Cursor cursor = this.db.query(true, MySQLiteHelper.DB_TABLE, Location.COLS,
+        Cursor cursor = this.db.query(true, LocationDbHelper.DB_TABLE, Location.COLS,
                 Location.ZIP_COL + " = '" + zip + "'", null, null, null, null, null);
         if (cursor.getCount() > 0) {
             cursor.moveToFirst();
@@ -66,11 +66,11 @@ public class LocationDataSource {
 
     public List<Location> getAll() {
         ArrayList<Location> allLocationsList = new ArrayList<>();
-        Cursor cursor = this.db.query(MySQLiteHelper.DB_TABLE, Location.COLS, null, null, null, null, null);
+        Cursor cursor = this.db.query(LocationDbHelper.DB_TABLE, Location.COLS, null, null, null, null, null);
         cursor.moveToFirst();
         while (!cursor.isAfterLast()) {
             Location location = cursorToLocation(cursor);
-            if (!location.getZip().equals(MySQLiteHelper.DEVICE_ALERT_ENABLED_ZIP)) {
+            if (!location.getZip().equals(LocationDbHelper.DEVICE_ALERT_ENABLED_ZIP)) {
                 allLocationsList.add(location);
             }
             cursor.moveToNext();

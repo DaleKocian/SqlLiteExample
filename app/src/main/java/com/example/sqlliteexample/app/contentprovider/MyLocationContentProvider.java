@@ -10,8 +10,7 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.text.TextUtils;
 
-import com.example.sqlliteexample.app.database.LocationDataSource;
-import com.example.sqlliteexample.app.database.MySQLiteHelper;
+import com.example.sqlliteexample.app.database.LocationDbHelper;
 import com.example.sqlliteexample.app.model.Location;
 
 import java.util.Arrays;
@@ -21,12 +20,12 @@ import java.util.HashSet;
  * Created by dkocian on 5/29/14.
  */
 public class MyLocationContentProvider extends ContentProvider {
-    MySQLiteHelper database;
+    private LocationDbHelper mOpenHelper;
     // used for the UriMacher
     private static final int TODOS = 10;
     private static final int TODO_ID = 20;
 
-    private static final String AUTHORITY = "de.vogella.android.todos.contentprovider";
+    private static final String AUTHORITY = "com.example.sqlliteexample.app.contentprovider";
 
     private static final String BASE_PATH = "todos";
     public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY
@@ -46,8 +45,8 @@ public class MyLocationContentProvider extends ContentProvider {
 
     @Override
     public boolean onCreate() {
-        database = new MySQLiteHelper(getContext());
-        return false;
+        mOpenHelper = new LocationDbHelper(getContext());
+        return true;
     }
 
     @Override
@@ -59,7 +58,7 @@ public class MyLocationContentProvider extends ContentProvider {
         checkColumns(projection);
 
         // Set the table
-        queryBuilder.setTables(MySQLiteHelper.DB_TABLE);
+        queryBuilder.setTables(LocationDbHelper.DB_TABLE);
         int uriType = sURIMatcher.match(uri);
         switch (uriType) {
             case TODOS:
@@ -71,9 +70,8 @@ public class MyLocationContentProvider extends ContentProvider {
             default:
                 throw new IllegalArgumentException("Unknown URI: " + uri);
         }
-        SQLiteDatabase db = database.getWritableDatabase();
-        Cursor cursor = queryBuilder.query(db, projection, selection,
-                selectionArgs, null, null, sortOrder);
+        SQLiteDatabase db = mOpenHelper.getReadableDatabase();
+        Cursor cursor = db.query(LocationDbHelper.DB_TABLE, projection, selection, selectionArgs, null, null, sortOrder);
         // make sure that potential listeners are getting notified
         cursor.setNotificationUri(getContext().getContentResolver(), uri);
 
@@ -88,12 +86,12 @@ public class MyLocationContentProvider extends ContentProvider {
     @Override
     public Uri insert(Uri uri, ContentValues values) {
         int uriType = sURIMatcher.match(uri);
-        SQLiteDatabase sqlDB = database.getWritableDatabase();
+        SQLiteDatabase sqlDB = mOpenHelper.getWritableDatabase();
         int rowsDeleted = 0;
         long id = 0;
         switch (uriType) {
             case TODOS:
-                id = sqlDB.insert(MySQLiteHelper.DB_TABLE, null, values);
+                id = sqlDB.insert(LocationDbHelper.DB_TABLE, null, values);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown URI: " + uri);
@@ -105,21 +103,21 @@ public class MyLocationContentProvider extends ContentProvider {
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
         int uriType = sURIMatcher.match(uri);
-        SQLiteDatabase sqlDB = database.getWritableDatabase();
+        SQLiteDatabase sqlDB = mOpenHelper.getWritableDatabase();
         int rowsDeleted = 0;
         switch (uriType) {
             case TODOS:
-                rowsDeleted = sqlDB.delete(MySQLiteHelper.DB_TABLE, selection,
+                rowsDeleted = sqlDB.delete(LocationDbHelper.DB_TABLE, selection,
                         selectionArgs);
                 break;
             case TODO_ID:
                 String id = uri.getLastPathSegment();
                 if (TextUtils.isEmpty(selection)) {
-                    rowsDeleted = sqlDB.delete(MySQLiteHelper.DB_TABLE,
+                    rowsDeleted = sqlDB.delete(LocationDbHelper.DB_TABLE,
                             Location.ID_COL + "=" + id,
                             null);
                 } else {
-                    rowsDeleted = sqlDB.delete(MySQLiteHelper.DB_TABLE,
+                    rowsDeleted = sqlDB.delete(LocationDbHelper.DB_TABLE,
                             Location.ID_COL+ "=" + id
                                     + " and " + selection,
                             selectionArgs);
@@ -135,11 +133,11 @@ public class MyLocationContentProvider extends ContentProvider {
     @Override
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
         int uriType = sURIMatcher.match(uri);
-        SQLiteDatabase sqlDB = database.getWritableDatabase();
+        SQLiteDatabase sqlDB = mOpenHelper.getWritableDatabase();
         int rowsUpdated = 0;
         switch (uriType) {
             case TODOS:
-                rowsUpdated = sqlDB.update(MySQLiteHelper.DB_TABLE,
+                rowsUpdated = sqlDB.update(LocationDbHelper.DB_TABLE,
                         values,
                         selection,
                         selectionArgs);
@@ -147,12 +145,12 @@ public class MyLocationContentProvider extends ContentProvider {
             case TODO_ID:
                 String id = uri.getLastPathSegment();
                 if (TextUtils.isEmpty(selection)) {
-                    rowsUpdated = sqlDB.update(MySQLiteHelper.DB_TABLE,
+                    rowsUpdated = sqlDB.update(LocationDbHelper.DB_TABLE,
                             values,
                             Location.ID_COL + "=" + id,
                             null);
                 } else {
-                    rowsUpdated = sqlDB.update(MySQLiteHelper.DB_TABLE,
+                    rowsUpdated = sqlDB.update(LocationDbHelper.DB_TABLE,
                             values,
                             Location.ID_COL + "=" + id
                                     + " and "

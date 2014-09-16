@@ -1,35 +1,37 @@
 package com.example.sqlliteexample.app;
 
 import android.app.ListActivity;
-import android.database.sqlite.SQLiteException;
+import android.app.LoaderManager;
+import android.content.CursorLoader;
+import android.content.Loader;
+import android.database.Cursor;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.Toast;
+import android.widget.CursorAdapter;
+import android.widget.SimpleCursorAdapter;
 
-import com.example.sqlliteexample.app.database.LocationDataSource;
+import com.example.sqlliteexample.app.contentprovider.MyLocationContentProvider;
 import com.example.sqlliteexample.app.model.Location;
 
 import java.math.BigInteger;
-import java.util.List;
 import java.util.Random;
 
-public class MainActivity extends ListActivity {
+public class MainActivity extends ListActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final String CLASS_NAME = MainActivity.class.getSimpleName();
-    private LocationDataSource locationDataSource;
+    private static final int LOCATION_LOADER = 0;
+    private SimpleCursorAdapter cursorAdapter;
+    String[] LOCATION_COLUMNS = new String[]{ Location.ZIP_COL, Location.ID_COL};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.fragment_main);
-        locationDataSource = new LocationDataSource(this);
-        locationDataSource.open();
-        List<Location> locationList = locationDataSource.getAll();
-        ArrayAdapter<Location> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, locationList);
-        setListAdapter(adapter);
+        cursorAdapter = new SimpleCursorAdapter(this, android.R.layout.simple_list_item_1, null,
+                LOCATION_COLUMNS, new int[]{android.R.id.text1}, CursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
+        setListAdapter(cursorAdapter);
+        getLoaderManager().initLoader(LOCATION_LOADER, null, this);
     }
 
     @Override
@@ -49,40 +51,38 @@ public class MainActivity extends ListActivity {
     }
 
     public void onClick(View view) {
-        ArrayAdapter<Location> adapter = (ArrayAdapter<Location>) getListAdapter();
-        Location location;
         switch (view.getId()) {
             case R.id.add:
-                location = new Location(new BigInteger(16, new Random()).toString(10), "San Antonio", "Bexar County",
-                    0L, 0);
-                try {
-                    locationDataSource.createLocation(location);
-                    adapter.add(location);
-                } catch (SQLiteException e) {
-                    Log.e(CLASS_NAME, e.getMessage());
-                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
-                }
+                Location location =
+                        new Location(new BigInteger(16, new Random()).toString(10), "San Antonio", "Bexar County", 0L, 0);
+                getContentResolver().insert(MyLocationContentProvider.CONTENT_URI, location.getContentValues());
                 break;
             case R.id.delete:
                 if (getListAdapter().getCount() > 0) {
-                    location = (Location) getListAdapter().getItem(0);
-                    if (locationDataSource.delete(location.getId()) > 0) {
-                        adapter.remove(location);
+                    Cursor cursor = (Cursor) getListAdapter().getItem(0);
+                    if (cursor.moveToFirst()) {
+                        Long id = cursor.getLong(cursor.getColumnIndex(Location.ID_COL));
+                        getContentResolver().delete(MyLocationContentProvider.CONTENT_URI, Location.ID_COL + " = ?",
+                                new String[]{String.valueOf(id)});
                     }
-                }                break;
+                }
+                break;
         }
-        adapter.notifyDataSetChanged();
     }
 
     @Override
-    protected void onResume() {
-        locationDataSource.open();
-        super.onResume();
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        String sortOrder = Location.ZIP_COL + " ASC";
+        return new CursorLoader(this, MyLocationContentProvider.CONTENT_URI, LOCATION_COLUMNS, null, null, sortOrder);
     }
 
     @Override
-    protected void onPause() {
-        locationDataSource.close();
-        super.onPause();
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        cursorAdapter.swapCursor(data);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        cursorAdapter.swapCursor(null);
     }
 }

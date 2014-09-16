@@ -1,5 +1,7 @@
 package com.example.sqlliteexample.app.model;
 
+import android.content.ContentValues;
+
 /**
  * Created by dkocian on 5/29/14.
  */
@@ -33,6 +35,16 @@ public class Location {
         this.region = region;
         this.lastAlert = lastAlert;
         this.alertEnabled = alertEnabled;
+    }
+
+    public ContentValues getContentValues() {
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(ZIP_COL, zip);
+        contentValues.put(CITY_COL, city);
+        contentValues.put(REGION_COL, region);
+        contentValues.put(LAST_ALERT_COL, lastAlert);
+        contentValues.put(ALERT_ENABLED_COL, alertEnabled);
+        return contentValues;
     }
 
     public long getId() {
